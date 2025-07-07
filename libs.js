@@ -85,9 +85,10 @@ const compositImg = async (inputPath1, inputPath2, blendOption) => {
  * @param {Number} width1 New width
  * @param {Number} height1 New width
  * @param {Number} brightness Background image brightness
+ * @param {Number} overAllBrightness Overall image brightness
  * @param {Boolean} isColor If color = true otherwise false
  */
-const processImage = async (inputPath, outputPath, left, top, width, height, width1, height1, brightness, isColor) => {
+const processImage = async (inputPath, outputPath, left, top, width, height, width1, height1, brightness, overAllBrightness, isColor) => {
     try {
         const start = Date.now();
 
@@ -107,8 +108,8 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
 
         const blendImg = await compositImg(backgroundImg, svgBufferImg, 'multiply'); // Blend background with svg
 
-
-        sharp(blendImg)
+        const overAllBrightnessBuffer = await brightnessImg(blendImg, overAllBrightness);
+        sharp(overAllBrightnessBuffer)
             .resize(width1, height1)
             .png()
             .toFile(outputPath);

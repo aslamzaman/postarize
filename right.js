@@ -6,14 +6,11 @@ const main = async () => {
     try {
         for (let i = 0; i < 743; i++) { // 743
             const input = path.format({ dir: "D:/movie/Dhodi_Dekha_K_Nach/pics", base: `1 (${i + 1}).png` });
-            const output = path.format({ dir: "D:/movie/Dhodi_Dekha_K_Nach/bw_c", base: `1 (${i + 1}).png` });
-            await processImage(input, output, 716, 106, 487, 866, 1080, 1920, 1.2, 1.1, false);
-            //    await processImage("1.png", "output.png", 716, 106, 487, 866, 1080, 1920, 1.2,1.1, false);
+            const output = path.format({ dir: "D:/movie/Dhodi_Dekha_K_Nach/bw_r", base: `1 (${i + 1}).png` });
+            await processImage(input, output, 960, 106, 487, 866, 1080, 1920,  1.2, 1.1, false);
         }
     } catch (err) {
         console.error(err);
     }
 }
-
-// main();
-
+main();
