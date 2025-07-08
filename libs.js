@@ -1,6 +1,40 @@
 // lib.js
 const sharp = require('sharp');
+const { Jimp } = require("jimp");
 const potrace = require('potrace');
+
+
+const jimpContrast = async (inputPath, contrast) => {
+    try {
+        const image = await Jimp.read(inputPath);
+        image.contrast(contrast);
+        const buffer = await image.getBuffer("image/png");
+        console.log(`Created poster image`);
+        return buffer;
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+};
+
+
+
+
+
+const getImageBrightness = async (imagePath) => {
+    try {
+        const stats = await sharp(imagePath)
+            .grayscale()
+            .stats();
+        const brightness = stats.channels[0].mean;
+        return brightness;
+    } catch (error) {
+        console.error('Error processing image:', error);
+        return null;
+    }
+}
+
+
 
 
 const createSvg = (bufferImg) => {
@@ -88,25 +122,26 @@ const compositImg = async (inputPath1, inputPath2, blendOption) => {
  * @param {Number} overAllBrightness Overall image brightness
  * @param {Boolean} isColor If color = true otherwise false
  */
-const processImage = async (inputPath, outputPath, left, top, width, height, width1, height1, brightness, overAllBrightness, isColor) => {
+const processImage = async (inputPath, outputPath, left, top, width, height, width1, height1, contrast, overAllBrightness, isColor) => {
     try {
         const start = Date.now();
 
-        const contrastBuffer = await compositImg(inputPath, inputPath, "multiply", 2); // Increase contrast
+       // const contrastBuffer = await compositImg(inputPath, inputPath, "multiply"); // Increase contrast
+      const contrastBuffer = await jimpContrast(inputPath, contrast);
         const cropedBuffer = await cropedImg(contrastBuffer, left, top, width, height); // Croped Image
 
 
         const svgImg = await createSvg(cropedBuffer); // Creating SVG
 
-        const svgBufferImg = await sharp(svgImg) // SVG to sharp buffer
-            .toBuffer();
+     //   const svgBufferImg = await sharp(svgImg) // SVG to sharp buffer
+        //    .toBuffer();
 
         const grayScaleImg = await grayImg(cropedBuffer); // Grayscale
 
         const colorOpt = isColor ? cropedBuffer : grayScaleImg;
-        const backgroundImg = await brightnessImg(colorOpt, brightness); // For background image brightness
 
-        const blendImg = await compositImg(backgroundImg, svgBufferImg, 'multiply'); // Blend background with svg
+
+        const blendImg = await compositImg(colorOpt, svgImg, 'multiply'); // Blend background with svg
 
         const overAllBrightnessBuffer = await brightnessImg(blendImg, overAllBrightness);
         sharp(overAllBrightnessBuffer)
@@ -124,44 +159,5 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
 };
 
 
-module.exports = { cropedImg, grayImg, brightnessImg, compositImg, createSvg, processImage };
+module.exports = { jimpContrast, getImageBrightness, cropedImg, grayImg, brightnessImg, compositImg, createSvg, processImage };
 
-
-
-/*
-// package.json
-{
-  "name": "p-7",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "potrace": "^2.1.8",
-    "sharp": "^0.34.2"
-  }
-}
-
-
-// index.js
-const path = require("path");
-const { processImage } = require("./utils");
-
-const main = async () => {
-    try {
-        for (let i = 0; i < 20; i++) { // 602
-            const input = path.format({ dir: "F:/videos/sathi/pics", base: `1 (${i + 1}).png` });
-            const output = path.format({ dir: "F:/videos/sathi/test", base: `1 (${i + 1}).png` });
-            await processImage(input, output, 486, 86, 307, 546, 1080, 1920, 1.5, false);
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
- main();
- */
