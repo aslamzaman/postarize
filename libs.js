@@ -4,6 +4,38 @@ const { Jimp } = require("jimp");
 const potrace = require('potrace');
 
 
+const analyzeImageBrightness = async (imagePath) => {
+    try {
+        const image = await Jimp.read(imagePath);
+        let totalBrightness = 0;
+        let pixelCount = 0;
+
+        image.scan(0, 0, image.bitmap.width, image.bitmap.height, function (x, y, idx) {
+            // Get RGB values
+            const red = this.bitmap.data[idx + 0];
+            const green = this.bitmap.data[idx + 1];
+            const blue = this.bitmap.data[idx + 2];
+
+            // Calculate perceived brightness (luminance) for the pixel
+            // This formula is often used for human perception of brightness
+            const brightness = Math.round((0.2126 * red + 0.7152 * green + 0.0722 * blue));
+
+            totalBrightness += brightness;
+            pixelCount++;
+        });
+
+        const averageBrightness = totalBrightness / pixelCount;
+        return averageBrightness;
+
+    } catch (err) {
+        console.error(`Error processing image ${imagePath}:`, err);
+        return null;
+    }
+}
+
+
+
+
 const getCropedSize = async (inputFile, y) => {
     try {
         const metadata = await sharp(inputFile).metadata();
@@ -149,12 +181,12 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
     try {
         const start = Date.now();
 
-       //  const contrastBuffer = await compositImg(inputPath, inputPath, "multiply"); // Increase contrast
-        const contrastImg = await jimpContrast(inputPath,0.20);
+        //  const contrastBuffer = await compositImg(inputPath, inputPath, "multiply"); // Increase contrast
+        const contrastImg = await jimpContrast(inputPath, 0.20);
         const cropedBuffer = await cropedImg(contrastImg, left, top, width, height); // Croped Image
 
 
-const blendImgXX = await compositImg(cropedBuffer, cropedBuffer, 'multiply'); // Blend background with svg
+        const blendImgXX = await compositImg(cropedBuffer, cropedBuffer, 'multiply'); // Blend background with svg
 
         const svgImg = await createSvg(blendImgXX); // Creating SVG
 
@@ -164,7 +196,7 @@ const blendImgXX = await compositImg(cropedBuffer, cropedBuffer, 'multiply'); //
         const colorOpt = isColor ? cropedBuffer : grayScaleImg;
 
 
-        const dd= await compositImg(svgImg, svgImg, 'multiply'); // Blend background with svg
+        const dd = await compositImg(svgImg, svgImg, 'multiply'); // Blend background with svg
         const blendImg = await compositImg(blendImgXX, dd, 'multiply'); // Blend background with svg
 
 
@@ -187,5 +219,5 @@ const blendImgXX = await compositImg(cropedBuffer, cropedBuffer, 'multiply'); //
 };
 
 
-module.exports = { getCropedSize, jimpContrast, getImageBrightness, cropedImg, grayImg, brightnessImg, compositImg, createSvg, processImage };
+module.exports = {analyzeImageBrightness, getCropedSize, jimpContrast, getImageBrightness, cropedImg, grayImg, brightnessImg, compositImg, createSvg, processImage };
 

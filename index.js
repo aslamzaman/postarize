@@ -1,96 +1,107 @@
 const path = require("path");
-const { getCropedSize, jimpContrast, processImage, getImageBrightness, compositImg, brightnessImg, grayImg } = require("./libs");
-const sharp = require("sharp");
 const fs = require("fs");
 const { Jimp } = require('jimp');
 
 
 
+const analyzeImageBrightness = async (imagePath) => {
+    try {
+        const image = await Jimp.read(imagePath);
+        let totalBrightness = 0;
+        let pixelCount = 0;
+
+        image.scan(0, 0, image.bitmap.width, image.bitmap.height, function (x, y, idx) {
+            // Get RGB values
+            const red = this.bitmap.data[idx + 0];
+            const green = this.bitmap.data[idx + 1];
+            const blue = this.bitmap.data[idx + 2];
+
+            // Calculate perceived brightness (luminance) for the pixel
+            // This formula is often used for human perception of brightness
+            const brightness = Math.round((0.2126 * red + 0.7152 * green + 0.0722 * blue));
+
+            totalBrightness += brightness;
+            pixelCount++;
+        });
+
+        const averageBrightness = totalBrightness / pixelCount;
+        return averageBrightness;
+
+    } catch (err) {
+        console.error(`Error processing image ${imagePath}:`, err);
+        return null;
+    }
+}
+
+
+
+
+
+const adjustImageBrightnessLinear = async (imagePath, outputPath) => {
+    try {
+        const start = Date.now();
+        const image = await Jimp.read(imagePath);
+        const currentBrightness = await analyzeImageBrightness(imagePath);
+        const customBrightness = currentBrightness * 1.5;
+        console.log({ current: currentBrightness, custom: customBrightness });
+        // Avoid division by zero
+        if (currentBrightness <= 0) currentBrightness = 1;
+
+        // Calculate scaling factor
+        const scale = customBrightness / currentBrightness;
+
+        // Apply scaling while clamping to [0, 255]
+        image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
+            image.bitmap.data[idx + 0] = Math.min(255, image.bitmap.data[idx + 0] * scale);
+            image.bitmap.data[idx + 1] = Math.min(255, image.bitmap.data[idx + 1] * scale);
+            image.bitmap.data[idx + 2] = Math.min(255, image.bitmap.data[idx + 2] * scale);
+        });
+        image.posterize(4);
+        image.greyscale();
+        await image.write(outputPath);
+
+        const timeTaken = ((Date.now() - start) / 1000).toFixed(2);
+        console.log(`Image created: ${outputPath} in ${timeTaken}s`);
+
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+};
+
+
+
+
+
 const main = async () => {
     try {
-        // const images = fs.readdirSync("E:/web/p-1/sathi khan/pics");
-        //for (let i = 0; i < images.length; i++) { // 595
-        // const inputPath = path.format({ dir: "E:/web/p-1/sathi khan/pics", base: `${images[i]}` })
-        // const output = path.join(__dirname, `pics/${images[i]}`);
+        const images = fs.readdirSync("D:/movie/dipa/pics");
+        for (let i = 0; i < images.length; i++) { // 595
+            const inputPath = path.format({ dir: "D:/movie/dipa/pics", base: `${images[i]}` })
+            const output = path.join(__dirname, `bw/${images[i]}`);
 
-        const img = path.join(__dirname, "image1590.png");
-        const { x, y, w, h, width, height } = await getCropedSize(img, 80);
-        await processImage(img, "image1590_poster_color.png", 0, 0, width, height, width, height, true);
-        // }
+            //  const img = path.join(__dirname, "image1590.png");
+            //  const { x, y, w, h, width, height } = await getCropedSize(img, 80);
+            await adjustImageBrightnessLinear(inputPath, output);
+
+        }
     } catch (err) {
         console.error(err);
     }
 }
 
-//main();
+main();
 
 
 
 
 
-const creatPosterizeColor = async (inputPath, outputPath) => {
-    const intensity = await getImageBrightness(inputPath);
-    const contrast = intensity * 0.00121716692227172;
-    const image = await Jimp.read(inputPath);
-    image.contrast(contrast); // 0.5 No change
-    image.brightness(1.3); // 1 No change
-    image.posterize(3);
-    await image.write(outputPath);
-    console.log("Jimp created poster");
-}
-
-const bgt = async () => {
-    try {
-  const intensity = await getImageBrightness(inputPath);
-
-    const contrast = intensity * 0.00121716692227172;
-
-        const image = await Jimp.read(inputPath);
-        image.greyscale();
-        image.contrast(contrast); // 0.5 No change
-        const buffer = image.getBuffer("image/png");
-
-        const intensityForBrightness = await getImageBrightness(buffer);
-        const bright = (1 / intensityForBrightness) * 236;
-        return bright;
-    } catch (err) {
-        console.log(err);
-    }
-}
-
-// https://pinetools.com/change-image-contrast
-const creatPosterizeGray = async (inputPath, outputPath) => {
-    const intensity = await getImageBrightness(inputPath);
-
-    const contrast = intensity * 0.00121716692227172;
-    console.log({ intensity, brightness })
-
-    const image = await Jimp.read(inputPath);
-    image.greyscale();
-    image.contrast(contrast); // 0.5 No change
-    const buffer = image.getBuffer("image/png");
-
-    const intensityForBrightness = await getImageBrightness(buffer);
-    const bright = (1 / intensityForBrightness) * 236;
 
 
-    image.brightness(bright); // 1 No change
-    image.posterize(3);
-    await image.write(outputPath);
-    console.log("Jimp created poster");
-}
 
-const dd = async () => {
-    try {
-        const img = path.join(__dirname, "1.png");
-        const outputPath = "temp.png";
 
-        await creatPosterizeGray(img, outputPath); // 0.2 liting
-    } catch (err) {
-        console.log(err);
-    }
-}
-dd();
+
+
 
 
 
