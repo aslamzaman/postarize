@@ -21,6 +21,12 @@ const getCropedSize = async (inputFile, y) => {
 }
 
 
+/**
+ * 
+ * @param {String} inputPath Image path 
+ * @param {Number} contrast 0 - 1 
+ * @returns 
+ */
 const jimpContrast = async (inputPath, contrast) => {
     try {
         const image = await Jimp.read(inputPath);
@@ -57,7 +63,7 @@ const getImageBrightness = async (imagePath) => {
 const createSvg = (bufferImg) => {
     return new Promise((resolve, reject) => {
         try {
-            potrace.posterize(bufferImg, { steps: 4 }, (err, svg) => {
+            potrace.posterize(bufferImg, { steps: 3 }, (err, svg) => {
                 if (err) {
                     console.log("Error creating svg!");
                     return;
@@ -143,12 +149,14 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
     try {
         const start = Date.now();
 
-        // const contrastBuffer = await compositImg(inputPath, inputPath, "multiply"); // Increase contrast
-        const cropedBuffer = await cropedImg(inputPath, left, top, width, height); // Croped Image
+       //  const contrastBuffer = await compositImg(inputPath, inputPath, "multiply"); // Increase contrast
+        const contrastImg = await jimpContrast(inputPath,0.20);
+        const cropedBuffer = await cropedImg(contrastImg, left, top, width, height); // Croped Image
 
 
+const blendImgXX = await compositImg(cropedBuffer, cropedBuffer, 'multiply'); // Blend background with svg
 
-        const svgImg = await createSvg(cropedBuffer); // Creating SVG
+        const svgImg = await createSvg(blendImgXX); // Creating SVG
 
 
         const grayScaleImg = await grayImg(cropedBuffer); // Grayscale
@@ -156,11 +164,12 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
         const colorOpt = isColor ? cropedBuffer : grayScaleImg;
 
 
-        const blendImg = await compositImg(colorOpt, svgImg, 'multiply'); // Blend background with svg
+        const dd= await compositImg(svgImg, svgImg, 'multiply'); // Blend background with svg
+        const blendImg = await compositImg(blendImgXX, dd, 'multiply'); // Blend background with svg
 
 
         const brightness = await getImageBrightness(cropedBuffer);
-        const x = (1 / brightness) * 140;
+        const x = (1 / brightness) * 180;
 
         const overAllBrightnessBuffer = await brightnessImg(blendImg, x);
         sharp(overAllBrightnessBuffer)
