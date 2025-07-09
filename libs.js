@@ -13,7 +13,7 @@ const getCropedSize = async (inputFile, y) => {
 
         const w = parseInt((9 / 16) * h);
         const x = parseInt((width - w) / 2);
-        return { x, y, w, h };
+        return { x, y, w, h, width, height };
     } catch (err) {
         console.error(err);
         throw err;
@@ -157,9 +157,6 @@ const processImage = async (inputPath, outputPath, left, top, width, height, wid
 
 
         const blendImg = await compositImg(colorOpt, svgImg, 'multiply'); // Blend background with svg
-
-
-
 
 
         const brightness = await getImageBrightness(cropedBuffer);

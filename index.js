@@ -1,47 +1,32 @@
 const path = require("path");
 const { getCropedSize, jimpContrast, processImage, getImageBrightness, compositImg, brightnessImg, grayImg } = require("./libs");
 const sharp = require("sharp");
+const fs = require("fs");
 
 
 
 const main = async () => {
     try {
-        for (let i = 0; i < 595; i++) { // 595
-            const input = path.format({ dir: "D:/movie/sathi-9-7/part-1", base: `1 (${i + 1}).png` });
-            const output = path.format({ dir: "D:/movie/sathi-9-7/part-1-1", base: `1 (${i + 1}).png` });
-            const { x, y, w, h } = await getCropedSize(input, 80);
+       // const images = fs.readdirSync("E:/web/p-1/sathi khan/pics");
+        //for (let i = 0; i < images.length; i++) { // 595
+           // const inputPath = path.format({ dir: "E:/web/p-1/sathi khan/pics", base: `${images[i]}` })
+           // const output = path.join(__dirname, `pics/${images[i]}`);
 
-            await processImage(input, output, x, y, w, h, 1080, 1920, false);
-        }
+           const img = path.join(__dirname,"cover.png");
+            const { x, y, w, h, width, height } = await getCropedSize(img, 80);
+            await processImage(img, "cover_final.png", 0, 0, width, height, width, height, false);
+       // }
     } catch (err) {
         console.error(err);
     }
 }
 
- main();
-
-const main2 = async () => {
-    try {
-
-        const inputFile = path.join(__dirname, "prova_pencil.png");
-        const outputFile = path.join(__dirname, "output.png");
-
-        //   const inputFile = path.format({ dir: "E:/web/p-1/sathi khan/pics", base: "1 (12).png" });
-        //    const outputFile = path.format({ dir: "E:/web/p-1/sathi khan/pics", base: "1 (12)-1.png" });
-
-        const { x, y, w, h } = await getCropedSize(inputFile, 80);
-        console.log({ x, w, h })
+main();
 
 
 
-        await processImage(inputFile, outputFile, x, y, w, h, 1080, 1920, true);
 
-    } catch (err) {
-        console.error(err);
-    }
-}
 
-//main2();
 
 
 
